@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FloU – Prototipo v2</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#e8eaf0; display:flex; justify-content:center; align-items:center; min-height:100vh; font-family:'Segoe UI',system-ui,sans-serif; padding:20px; }
+
+:root {
+  --navy:#1B2466; --teal:#3ECFBF; --purple:#6B5BD2;
+  --pink:#FF6B9D; --warn:#FF9A3C; --success:#4CAF50;
+  --red:#e53935; --yellow:#FFD93D;
+  --light:#f7f8fc; --card:#ffffff; --text:#1a1a2e; --muted:#8892a4; --border:#e8eaf0;
+}
+
+/* PHONE */
+.phone { width:390px; height:844px; background:#f7f8fc; border-radius:50px; box-shadow:0 30px 80px rgba(0,0,0,.25),inset 0 0 0 2px var(--navy); overflow:hidden; position:relative; }
+.notch { position:absolute; top:0; left:50%; transform:translateX(-50%); width:130px; height:34px; background:var(--navy); border-radius:0 0 20px 20px; z-index:999; }
+
+/* SCREENS */
+.screen { position:absolute; inset:0; overflow-y:auto; display:none; flex-direction:column; background:var(--light); }
+.screen.active { display:flex; }
+.screen::-webkit-scrollbar { width:3px; }
+.screen::-webkit-scrollbar-thumb { background:#c0c4d0; border-radius:3px; }
+
+/* HEADERS */
+.header { background:var(--navy); padding:52px 24px 20px; color:white; flex-shrink:0; }
+.header-grad { background:linear-gradient(135deg,var(--navy) 0%,var(--purple) 100%); padding:52px 24px 20px; color:white; flex-shrink:0; }
+
+/* BUTTONS */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:14px 24px; border:none; border-radius:14px; font-size:15px; font-weight:600; cursor:pointer; transition:opacity .15s,transform .1s; }
+.btn:active { opacity:.85; transform:scale(.97); }
+.btn-primary { background:var(--teal); color:white; }
+.btn-navy { background:var(--navy); color:white; }
+.btn-outline { background:transparent; border:2px solid var(--navy); color:var(--navy); }
+.btn-full { width:100%; }
+.btn-sm { padding:8px 14px; font-size:12px; border-radius:10px; }
+.btn-back { background:rgba(255,255,255,.2); border:none; color:white; padding:9px 16px; border-radius:12px; cursor:pointer; font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; }
+
+/* CARDS */
+.card { background:var(--card); border-radius:18px; padding:16px; box-shadow:0 2px 12px rgba(0,0,0,.05); }
+
+/* CHIPS */
+.chip { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.chip-teal { background:#e0faf7; color:var(--teal); }
+.chip-purple { background:#ede8ff; color:var(--purple); }
+.chip-warn { background:#fff3e0; color:var(--warn); }
+.chip-red { background:#ffe8e8; color:var(--red); }
+.chip-success { background:#e8f5e9; color:var(--success); }
+.chip-navy { background:#e8ebff; color:var(--navy); }
+.chip-pink { background:#ffe8f3; color:var(--pink); }
+
+/* BOTTOM NAV */
+.bottom-nav { position:absolute; bottom:0; left:0; right:0; height:72px; background:white; border-top:1px solid var(--border); display:flex; align-items:center; padding:0 4px; z-index:100; }
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 0; cursor:pointer; font-size:10px; color:var(--muted); font-weight:600; border:none; background:none; }
+.nav-item.active { color:var(--navy); }
+.nav-icon { font-size:20px; }
+.nav-dot { width:4px; height:4px; border-radius:50%; background:var(--teal); }
+
+/* CONTENT */
+.content { flex:1; padding:14px; padding-bottom:88px; }
+.section-title { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin:12px 0 8px; }
+
+/* TIMELINE */
+.timeline { position:relative; padding-left:28px; }
+.timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:var(--border); }
+.tl-item { position:relative; margin-bottom:10px; }
+.tl-dot { position:absolute; left:-24px; top:14px; width:12px; height:12px; border-radius:50%; border:2px solid white; }
+.tl-card { background:white; border-radius:14px; padding:11px 13px; box-shadow:0 2px 8px rgba(0,0,0,.06); border-left:4px solid var(--teal); }
+.tl-card.class-card { border-left-color:var(--navy); }
+.tl-card.task-card { border-left-color:var(--purple); }
+.tl-card.commute-card { border-left-color:var(--teal); }
+.tl-card.rest-card { border-left-color:var(--yellow); }
+.tl-card.exam-card { border-left-color:var(--red); }
+.tl-time { font-size:10px; color:var(--muted); font-weight:600; margin-bottom:2px; }
+.tl-title { font-size:13px; font-weight:700; color:var(--text); }
+.tl-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* INPUTS */
+.input-group { margin-bottom:13px; }
+.input-label { font-size:11px; font-weight:700; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.5px; }
+.input-field { width:100%; padding:12px 14px; border:2px solid var(--border); border-radius:12px; font-size:14px; color:var(--text); background:white; outline:none; transition:border-color .15s; }
+.input-field:focus { border-color:var(--teal); }
+
+/* TABS */
+.tabs { display:flex; background:#eef0f7; border-radius:14px; padding:4px; margin-bottom:14px; }
+.tab { flex:1; padding:9px; text-align:center; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; color:var(--muted); border:none; background:none; transition:all .2s; }
+.tab.active { background:white; color:var(--navy); box-shadow:0 2px 8px rgba(0,0,0,.08); }
+
+/* MODAL */
+.modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,.45); display:none; align-items:flex-end; z-index:200; }
+.modal-overlay.active { display:flex; }
+.modal-sheet { background:white; width:100%; border-radius:28px 28px 0 0; padding:22px; max-height:88%; overflow-y:auto; }
+.modal-handle { width:40px; height:4px; background:#ddd; border-radius:4px; margin:0 auto 18px; }
+
+/* MOTIVATION */
+.motiv-banner { background:linear-gradient(135deg,#ff6b9d,#c44bdb); border-radius:16px; padding:13px 15px; margin-bottom:12px; color:white; display:flex; align-items:center; gap:11px; }
+.motiv-title { font-weight:700; font-size:13px; }
+.motiv-text { font-size:12px; line-height:1.4; opacity:.9; margin-top:2px; }
+
+/* TRAFFIC ALERT */
+.traffic-alert { background:linear-gradient(135deg,#ff9a3c,#ff6b35); border-radius:14px; padding:12px 14px; margin-bottom:12px; color:white; display:flex; align-items:center; gap:10px; }
+
+/* STATS */
+.stats-row { display:flex; gap:8px; margin-bottom:12px; }
+.stat-card { flex:1; background:rgba(255,255,255,.15); border-radius:12px; padding:10px; text-align:center; }
+.stat-num { font-size:20px; font-weight:800; }
+.stat-label { font-size:10px; opacity:.75; margin-top:1px; }
+
+/* AUDIO PLAYER */
+.audio-card { background:linear-gradient(135deg,var(--navy),var(--purple)); border-radius:18px; padding:16px; color:white; margin-bottom:12px; }
+.progress-bar { height:4px; background:rgba(255,255,255,.25); border-radius:4px; margin:12px 0 8px; cursor:pointer; }
+.progress-fill { height:100%; background:var(--teal); border-radius:4px; width:35%; transition:width .3s; }
+.ctrl-btn { background:rgba(255,255,255,.15); border:none; color:white; width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; }
+.ctrl-play { background:var(--teal); width:48px; height:48px; font-size:20px; }
+
+/* DURATION SELECTOR */
+.dur-row { display:flex; gap:8px; margin-bottom:12px; }
+.dur-btn { flex:1; padding:10px 0; text-align:center; border:2px solid var(--border); border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; background:white; color:var(--muted); transition:all .15s; }
+.dur-btn.sel { border-color:var(--navy); background:var(--navy); color:white; }
+
+/* STARS */
+.stars { display:flex; gap:4px; font-size:22px; cursor:pointer; }
+.star { color:#ddd; transition:color .15s; }
+.star.lit { color:#FFD93D; }
+
+/* FLASHCARD */
+.flashcard { background:linear-gradient(135deg,var(--purple),#9b59b6); border-radius:16px; padding:18px; color:white; text-align:center; margin-bottom:12px; min-height:100px; display:flex; flex-direction:column; justify-content:center; cursor:pointer; }
+.flashcard-label { font-size:10px; opacity:.7; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.flashcard-text { font-size:15px; font-weight:700; line-height:1.4; }
+
+/* QUIZ */
+.quiz-option { padding:12px 14px; border:2px solid var(--border); border-radius:12px; margin-bottom:8px; font-size:13px; font-weight:600; cursor:pointer; background:white; transition:all .15s; text-align:left; width:100%; }
+.quiz-option.correct { border-color:var(--success); background:#e8f5e9; color:var(--success); }
+.quiz-option.wrong { border-color:var(--red); background:#ffe8e8; color:var(--red); }
+
+/* ACHIEVEMENTS */
+.badge { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.badge-icon { width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:24px; }
+.badge-label { font-size:10px; font-weight:700; text-align:center; color:var(--text); }
+.badge-locked { opacity:.35; filter:grayscale(1); }
+
+/* PARKING */
+.park-item { display:flex; align-items:center; gap:12px; padding:13px; background:white; border-radius:14px; margin-bottom:9px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+.park-icon { width:42px; height:42px; border-radius:12px; background:#e8ebff; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.avail-num { font-size:22px; font-weight:800; line-height:1; }
+.avail-label { font-size:10px; color:var(--muted); }
+
+/* COMMUNITY */
+.comm-card { background:white; border-radius:16px; padding:13px; margin-bottom:9px; box-shadow:0 2px 8px rgba(0,0,0,.05); display:flex; align-items:center; gap:11px; }
+.avatar { width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.join-btn { margin-left:auto; padding:8px 14px; border:none; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.join-btn.joined { background:#e8f5e9; color:var(--success); }
+.join-btn.open { background:#e8ebff; color:var(--navy); }
+
+/* TOGGLE SWITCH */
+.toggle { width:44px; height:24px; border-radius:12px; position:relative; cursor:pointer; flex-shrink:0; }
+.toggle-on { background:var(--teal); }
+.toggle-off { background:#ddd; }
+.toggle-knob { width:18px; height:18px; background:white; border-radius:50%; position:absolute; top:3px; transition:left .2s; }
+.toggle-on .toggle-knob { left:23px; }
+.toggle-off .toggle-knob { left:3px; }
+
+/* TRANSPORT TAGS */
+.transport-tags { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px; }
+.transport-tag { padding:7px 13px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:2px solid var(--border); background:white; color:var(--muted); transition:all .15s; }
+.transport-tag.sel { border-color:var(--navy); background:var(--navy); color:white; }
+
+/* PRIORITY */
+.priority-row { display:flex; gap:7px; }
+.priority-btn { flex:1; padding:10px 0; text-align:center; border:2px solid var(--border); border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; background:white; transition:all .15s; }
+.priority-btn.sel-alta { border-color:var(--red); background:#ffe8e8; color:var(--red); }
+.priority-btn.sel-media { border-color:var(--warn); background:#fff3e0; color:var(--warn); }
+.priority-btn.sel-baja { border-color:var(--success); background:#e8f5e9; color:var(--success); }
+
+/* EMOTION CHECK-IN */
+.emotion-row { display:flex; justify-content:space-between; margin:8px 0 16px; }
+.emotion-btn { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:8px; border-radius:12px; border:2px solid transparent; transition:all .15s; flex:1; }
+.emotion-btn.sel { border-color:var(--navy); background:#f0f4ff; }
+.emotion-emoji { font-size:26px; }
+.emotion-label { font-size:10px; font-weight:600; color:var(--muted); }
+
+/* SEARCH */
+.search-bar { display:flex; align-items:center; background:white; border-radius:14px; padding:10px 14px; gap:10px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:12px; }
+.search-input { border:none; outline:none; flex:1; font-size:14px; color:var(--text); background:transparent; }
+
+/* FAB */
+.fab { position:absolute; bottom:82px; right:18px; width:50px; height:50px; border-radius:50%; background:var(--navy); color:white; border:none; font-size:26px; cursor:pointer; box-shadow:0 6px 20px rgba(27,36,102,.35); display:flex; align-items:center; justify-content:center; z-index:50; }
+
+/* LOGIN */
+#screen-login { background:linear-gradient(160deg,var(--navy) 0%,var(--purple) 60%,var(--teal) 100%); justify-content:center; align-items:center; padding:40px 28px; }
+.logo-circle { width:84px; height:84px; background:rgba(255,255,255,.15); border-radius:26px; display:flex; align-items:center; justify-content:center; font-size:40px; margin:0 auto 14px; border:2px solid rgba(255,255,255,.3); }
+.login-card { background:white; border-radius:24px; padding:22px; width:100%; }
+
+/* PROFILE */
+.profile-header { background:linear-gradient(135deg,var(--navy),var(--purple)); padding:52px 24px 24px; color:white; }
+.profile-avatar { width:68px; height:68px; border-radius:50%; background:rgba(255,255,255,.2); border:3px solid rgba(255,255,255,.4); display:flex; align-items:center; justify-content:center; font-size:30px; margin-bottom:10px; }
+
+/* UPLOAD ZONE */
+.upload-zone { border:2px dashed var(--border); border-radius:14px; padding:24px; text-align:center; cursor:pointer; transition:border-color .15s; }
+.upload-zone:hover { border-color:var(--teal); }
+
+/* CONCENTRATE MODE BANNER */
+.concentrate-banner { background:linear-gradient(135deg,#1B2466,#3ECFBF); border-radius:14px; padding:12px 14px; color:white; display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+
+/* FAVE ROUTE */
+.fave-item { display:flex; align-items:center; gap:12px; padding:12px 14px; background:white; border-radius:14px; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- ══════════════════════════════
+       LOGIN
+  ══════════════════════════════ -->
+  <div class="screen active" id="screen-login">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div class="logo-circle">🌊</div>
+      <div style="font-size:36px;font-weight:900;color:white;letter-spacing:-1px;">FloU</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:4px;">Tu día, fluido y sin estrés</div>
+    </div>
+    <div class="login-card">
+      <div style="font-size:18px;font-weight:800;margin-bottom:3px;">Bienvenido/a</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px;">Ingresa con tu correo Uniandes</div>
+      <div class="input-group">
+        <div class="input-label">Correo institucional</div>
+        <input class="input-field" type="email" value="s.santanam@uniandes.edu.co">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Contraseña</div>
+        <input class="input-field" type="password" value="••••••••">
+      </div>
+      <button class="btn btn-navy btn-full" onclick="goTo('screen-home')">Entrar a FloU →</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">Solo para estudiantes Uniandes 🎓</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       HOME / AGENDA
+  ══════════════════════════════ -->
+  <div class="screen" id="screen-home">
+    <div class="header-grad">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <div style="font-size:12px;opacity:.7;">Jueves 15 de mayo · 6:28 AM</div>
+          <div style="font-size:20px;font-weight:800;margin-top:3px;">Buenos días, Samuel 👋</div>
+        </div>
+        <div onclick="goTo('screen-profile')" style="cursor:pointer;width:38px;height:38px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num">4</div><div class="stat-label">Clases</div></div>
+        <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Tareas</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#FFD93D;">87%</div><div class="stat-label">Carga</div></div>
+        <div class="stat-card" style="cursor:pointer;" onclick="openModal('modal-checkin')"><div class="stat-num">😐</div><div class="stat-label">Check-in</div></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- TRAFFIC ALERT -->
+      <div class="traffic-alert">
+        <span style="font-size:24px;">🚨</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;">¡Retraso detectado!</div>
+          <div style="font-size:12px;opacity:.9;">Paro en Calle 92. Sale en 10 min para llegar puntual a Álgebra.</div>
+        </div>
+      </div>
+
+      <!-- MOTIVATION -->
+      <div class="motiv-banner">
+        <span style="font-size:24px;">💪</span>
+        <div>
+          <div class="motiv-title">¡Día intenso, pero tú puedes!</div>
+          <div class="motiv-text">Agenda al 87%. Recuerda tus pausas — tienes todo para lograrlo 🚀</div>
+        </div>
+      </div>
+
+      <div class="section-title">📅 Tu agenda de hoy</div>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--red);"></div>
+          <div class="tl-card exam-card">
+            <div class="tl-time">⚠️ CALENDARIO ACADÉMICO</div>
+            <div class="tl-title">📝 Parcial 2 Física – Esta semana</div>
+            <div class="tl-sub">Viernes 16 · 2:00 PM · FloU ajustó tus tareas automáticamente</div>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--teal);"></div>
+          <div class="tl-card commute-card">
+            <div class="tl-time">6:30 AM · Trayecto</div>
+            <div class="tl-title">🚌 Salida al campus</div>
+            <div class="tl-sub">TransMilenio · 55 min · Ruta favorita ⭐</div>
+            <div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap;">
+              <span class="chip chip-warn">🚦 Tráfico medio</span>
+              <span onclick="goTo('screen-community')" class="chip chip-navy" style="cursor:pointer;">👥 2 compañeros</span>
+              <span onclick="openModal('modal-concentrate')" class="chip chip-teal" style="cursor:pointer;">🎧 Modo concentración</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--navy);"></div>
+          <div class="tl-card class-card">
+            <div class="tl-time">8:00 AM · Clase</div>
+            <div class="tl-title">📐 Álgebra Lineal</div>
+            <div class="tl-sub">ML-305 · Prof. Ramírez · 💡 Revisa tu podcast antes de entrar</div>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--purple);"></div>
+          <div class="tl-card task-card">
+            <div class="tl-time">9:50 AM · Tarea programada</div>
+            <div class="tl-title">✍️ Taller Álgebra</div>
+            <div class="tl-sub">50 min · Entrega hoy 11 PM</div>
+            <div style="margin-top:5px;"><span class="chip chip-red">🔴 Alta prioridad</span></div>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--navy);"></div>
+          <div class="tl-card class-card">
+            <div class="tl-time">10:00 AM · Clase</div>
+            <div class="tl-title">📊 Microeconomía</div>
+            <div class="tl-sub">SD-208 · Prof. Torres</div>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--yellow);"></div>
+          <div class="tl-card rest-card">
+            <div class="tl-time">12:00 PM · Descanso sugerido</div>
+            <div class="tl-title">😴 Mini pausa activa</div>
+            <div class="tl-sub">20 min · FloU detectó cansancio alto · Respira y recarga</div>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--navy);"></div>
+          <div class="tl-card class-card">
+            <div class="tl-time">2:00 PM · Clase</div>
+            <div class="tl-title">⚡ Física II</div>
+            <div class="tl-sub">AU-101 · Prof. Mendoza · 📝 Parcial viernes</div>
+          </div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot" style="background:var(--teal);"></div>
+          <div class="tl-card commute-card">
+            <div class="tl-time">4:00 PM · Trayecto de vuelta</div>
+            <div class="tl-title">🎧 Regreso a casa</div>
+            <div class="tl-sub">60 min · Podcast Física II listo para escuchar</div>
+            <div style="margin-top:6px;">
+              <span onclick="goTo('screen-podcast')" class="chip chip-purple" style="cursor:pointer;">▶ Abrir Podcast</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="fab" onclick="openModal('modal-tarea')">＋</button>
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Inicio<div class="nav-dot"></div></button>
+      <button class="nav-item" onclick="goTo('screen-podcast')"><span class="nav-icon">🎧</span>Podcast</button>
+      <button class="nav-item" onclick="goTo('screen-parking')"><span class="nav-icon">🅿️</span>Parqueo</button>
+      <button class="nav-item" onclick="goTo('screen-community')"><span class="nav-icon">👥</span>Comunidad</button>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════
+       PODCAST
+  ══════════════════════════════ -->
+  <div class="screen" id="screen-podcast">
+    <div class="header">
+      <div style="font-size:20px;font-weight:800;">🎧 Podcast de Apuntes</div>
+      <div style="font-size:12px;opacity:.75;margin-top:2px;">Aprende en el camino</div>
+    </div>
+    <div class="content">
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" id="tab-escuchar" onclick="switchTab('escuchar')">🎧 Escuchar</button>
+        <button class="tab" id="tab-crear" onclick="switchTab('crear')">➕ Crear</button>
+        <button class="tab" id="tab-quiz" onclick="switchTab('quiz')">🧠 Quiz</button>
+        <button class="tab" id="tab-cards" onclick="switchTab('cards')">📇 Fichas</button>
+      </div>
+
+      <!-- TAB: ESCUCHAR -->
+      <div id="panel-escuchar">
+        <!-- Player -->
+        <div class="audio-card">
+          <div style="font-size:10px;opacity:.6;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px;">Reproduciendo</div>
+          <div style="font-size:15px;font-weight:700;">Física II – Ondas y movimiento</div>
+          <div style="font-size:12px;opacity:.7;margin-top:2px;">15 min · Generado de tus apuntes</div>
+
+          <!-- Duration selector -->
+          <div style="margin-top:12px;margin-bottom:4px;font-size:11px;opacity:.7;">Duración del podcast:</div>
+          <div class="dur-row">
+            <button class="dur-btn" onclick="selectDur(this)">5 min</button>
+            <button class="dur-btn sel" onclick="selectDur(this)">10 min</button>
+            <button class="dur-btn" onclick="selectDur(this)">15 min</button>
+          </div>
+
+          <div class="progress-bar" onclick="seekAudio(event,this)"><div class="progress-fill" id="prog-fill"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.6;margin-bottom:10px;"><span id="cur-time">3:30</span><span>10:00</span></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button class="ctrl-btn">⏮</button>
+            <button class="ctrl-btn">⏪</button>
+            <button class="ctrl-btn ctrl-play" id="playBtn" onclick="togglePlay()">▶</button>
+            <button class="ctrl-btn">⏩</button>
+            <button class="ctrl-btn" id="speedBtn" onclick="cycleSpeed()">1x</button>
+          </div>
+        </div>
+
+        <!-- Rating -->
+        <div class="card" style="margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;">¿Qué tan útil fue este podcast?</div>
+          <div class="stars" id="stars">
+            <span class="star" onclick="ratePodcast(1)">★</span>
+            <span class="star" onclick="ratePodcast(2)">★</span>
+            <span class="star" onclick="ratePodcast(3)">★</span>
+            <span class="star" onclick="ratePodcast(4)">★</span>
+            <span class="star" onclick="ratePodcast(5)">★</span>
+          </div>
+        </div>
+
+        <!-- Mis audios -->
+        <div class="section-title">Mis audios</div>
+        <div class="card" style="margin-bottom:9px;">
+          <div style="display:flex;align-items:center;gap:11px;">
+            <div style="width:42px;height:42px;background:#ede8ff;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;">📐</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Álgebra – Espacios vectoriales</div>
+              <div style="font-size:11px;color:var(--muted);">22 min · ⭐⭐⭐⭐⭐</div>
+            </div>
+            <button class="btn btn-sm" style="background:#ede8ff;color:var(--purple);border:none;" onclick="showToast('▶ Reproduciendo Álgebra')">▶</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:9px;">
+          <div style="display:flex;align-items:center;gap:11px;">
+            <div style="width:42px;height:42px;background:#e8f5e9;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;">📊</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Micro – Equilibrio de Nash</div>
+              <div style="font-size:11px;color:var(--muted);">14 min · ⭐⭐⭐⭐</div>
+            </div>
+            <button class="btn btn-sm" style="background:#e8f5e9;color:var(--success);border:none;" onclick="showToast('▶ Reproduciendo Micro')">▶</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:9px;">
+          <div style="display:flex;align-items:center;gap:11px;">
+            <div style="width:42px;height:42px;background:#fff3e0;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;">📝</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;">Historia Ec. – Smith y Ricardo</div>
+              <div style="font-size:11px;color:var(--muted);">31 min · ⭐⭐⭐</div>
+            </div>
+            <button class="btn btn-sm" style="background:#fff3e0;color:var(--warn);border:none;" onclick="showToast('▶ Reproduciendo Historia')">▶</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: CREAR -->
+      <div id="panel-crear" style="display:none;">
+        <div class="upload-zone" onclick="simulateUpload()">
+          <div style="font-size:36px;">📄</div>
+          <div style="font-size:14px;font-weight:700;margin-top:8px;">Subir apuntes</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">PDF, foto o documento · FloU lo convierte en audio narrado</div>
+        </div>
+
+        <div class="section-title" style="margin-top:14px;">Opciones del podcast</div>
+
+        <div class="card" style="margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Duración según tu trayecto:</div>
+          <div class="dur-row">
+            <button class="dur-btn" onclick="selectDur(this)">5 min</button>
+            <button class="dur-btn sel" onclick="selectDur(this)">10 min</button>
+            <button class="dur-btn" onclick="selectDur(this)">15 min</button>
+          </div>
+          <div style="font-size:12px;color:var(--muted);">Tu trayecto habitual: 55 min — recomendamos 15 min</div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Formato de salida:</div>
+          <div style="display:flex;gap:8px;">
+            <div onclick="toggleFmt(this)" class="transport-tag sel">🎙 Narrado</div>
+            <div onclick="toggleFmt(this)" class="transport-tag">📇 Flashcards</div>
+            <div onclick="toggleFmt(this)" class="transport-tag">🧠 Quiz</div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Materia</div>
+          <select class="input-field" style="appearance:none;">
+            <option>Física II</option>
+            <option>Álgebra Lineal</option>
+            <option>Microeconomía</option>
+            <option>Historia Pensamiento Ec.</option>
+          </select>
+        </div>
+
+        <button class="btn btn-navy btn-full" onclick="showToast('🎧 Generando podcast... listo en 30 seg')">
+          ✨ Generar podcast
+        </button>
+      </div>
+
+      <!-- TAB: QUIZ -->
+      <div id="panel-quiz" style="display:none;">
+        <div class="card" style="margin-bottom:12px;background:linear-gradient(135deg,#e8ebff,#ede8ff);">
+          <div style="font-size:12px;color:var(--purple);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Física II – Ondas</div>
+          <div style="font-size:15px;font-weight:700;margin-top:6px;color:var(--text);">¿Cuál es la ecuación de la velocidad de una onda?</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Pregunta 1 de 5</div>
+        </div>
+
+        <button class="quiz-option" onclick="answerQuiz(this,false)">A. v = f · λ²</button>
+        <button class="quiz-option" onclick="answerQuiz(this,true)">B. v = f · λ</button>
+        <button class="quiz-option" onclick="answerQuiz(this,false)">C. v = λ / T²</button>
+        <button class="quiz-option" onclick="answerQuiz(this,false)">D. v = A · f</button>
+
+        <div style="margin-top:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:12px;color:var(--muted);font-weight:600;">Progreso</span>
+            <span style="font-size:12px;font-weight:700;color:var(--navy);">1/5</span>
+          </div>
+          <div style="height:6px;background:var(--border);border-radius:6px;">
+            <div style="width:20%;height:100%;background:var(--teal);border-radius:6px;"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-navy btn-full" style="margin-top:14px;" onclick="showToast('➡ Siguiente pregunta')">Siguiente →</button>
+
+        <div class="card" style="margin-top:12px;background:#e8f5e9;">
+          <div style="font-size:12px;font-weight:700;color:var(--success);">🏆 Tu racha actual: 3 días seguidos</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">¡Sigue así para desbloquear el badge "Cerebro Constante"!</div>
+        </div>
+      </div>
+
+      <!-- TAB: FICHAS -->
+      <div id="panel-cards" style="display:none;">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px;">Toca la ficha para ver la respuesta</div>
+
+        <div class="flashcard" onclick="flipCard(this,'¿Qué es el movimiento armónico simple?','Movimiento oscilatorio donde la fuerza restauradora es proporcional al desplazamiento: F = -kx')">
+          <div class="flashcard-label">Toca para revelar</div>
+          <div class="flashcard-text" id="fc-text-1">¿Qué es el movimiento armónico simple?</div>
+        </div>
+
+        <div class="flashcard" style="background:linear-gradient(135deg,#1B2466,#3ECFBF);" onclick="flipCard(this,'¿Cuál es la unidad del período?','El período T se mide en segundos (s). Es el tiempo que tarda una oscilación completa.')">
+          <div class="flashcard-label">Toca para revelar</div>
+          <div class="flashcard-text" id="fc-text-2">¿Cuál es la unidad del período?</div>
+        </div>
+
+        <div class="flashcard" style="background:linear-gradient(135deg,#FF6B9D,#c44bdb);" onclick="flipCard(this,'¿Qué es la amplitud de una onda?','La amplitud es el desplazamiento máximo desde la posición de equilibrio.')">
+          <div class="flashcard-label">Toca para revelar</div>
+          <div class="flashcard-text" id="fc-text-3">¿Qué es la amplitud de una onda?</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn btn-full" style="background:#ffe8e8;color:var(--red);border:none;font-size:13px;" onclick="showToast('📚 Ficha marcada para repasar')">😕 Repasar</button>
+          <button class="btn btn-full" style="background:#e8f5e9;color:var(--success);border:none;font-size:13px;" onclick="showToast('✅ ¡Dominada!')">✅ Dominada</button>
+        </div>
+      </div>
+
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Inicio</button>
+      <button class="nav-item active" onclick="goTo('screen-podcast')"><span class="nav-icon">🎧</span>Podcast<div class="nav-dot"></div></button>
+      <button class="nav-item" onclick="goTo('screen-parking')"><span class="nav-icon">🅿️</span>Parqueo</button>
+      <button class="nav-item" onclick="goTo('screen-community')"><span class="nav-icon">👥</span>Comunidad</button>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════
+       PARQUEADERO
+  ══════════════════════════════ -->
+  <div class="screen" id="screen-parking">
+    <div class="header">
+      <div style="font-size:20px;font-weight:800;">🅿️ Parqueaderos</div>
+      <div style="font-size:12px;opacity:.75;margin-top:2px;">Tiempo real · 7:42 AM · 🟢 verde = libre · 🟡 = casi lleno · 🔴 = lleno</div>
+    </div>
+    <div class="content">
+
+      <div class="card" style="margin-bottom:12px;background:linear-gradient(135deg,#e8f4fd,#d0e8f0);padding:14px;text-align:center;">
+        <div style="font-size:12px;color:#5a7a8a;font-weight:600;">📍 Mapa Campus Uniandes</div>
+        <div style="font-size:28px;margin:8px 0;">🗺️</div>
+        <div style="font-size:11px;color:#5a7a8a;">Toca un parqueadero para ver detalles</div>
+      </div>
+
+      <div class="section-title">Disponibilidad actual</div>
+
+      <div class="park-item">
+        <div class="park-icon">🚗</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Parqueadero ML</div>
+          <div style="font-size:11px;color:var(--muted);">Bloque ML · 2 min · ⭐ Favorito</div>
+          <span class="chip chip-success" style="margin-top:4px;">🟢 Disponible</span>
+        </div>
+        <div style="text-align:center;">
+          <div class="avail-num" style="color:var(--success);">12</div>
+          <div class="avail-label">cupos</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-icon">🏍️</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Motos AU</div>
+          <div style="font-size:11px;color:var(--muted);">Bloque AU · 4 min</div>
+          <span class="chip chip-success" style="margin-top:4px;">🟢 Disponible</span>
+        </div>
+        <div style="text-align:center;">
+          <div class="avail-num" style="color:var(--success);">8</div>
+          <div class="avail-label">cupos</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-icon">🚲</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Cicloparqueadero SD</div>
+          <div style="font-size:11px;color:var(--muted);">Bloque SD · 1 min</div>
+          <span class="chip chip-warn" style="margin-top:4px;">🟡 Casi lleno</span>
+        </div>
+        <div style="text-align:center;">
+          <div class="avail-num" style="color:var(--warn);">3</div>
+          <div class="avail-label">cupos</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-icon">🛴</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Zona Scooters W</div>
+          <div style="font-size:11px;color:var(--muted);">Bloque W · 5 min</div>
+          <span class="chip chip-red" style="margin-top:4px;">🔴 Lleno</span>
+        </div>
+        <div style="text-align:center;">
+          <div class="avail-num" style="color:var(--red);">0</div>
+          <div class="avail-label">cupos</div>
+        </div>
+      </div>
+
+      <div class="park-item">
+        <div class="park-icon">🚗</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Parqueadero Cra. 1</div>
+          <div style="font-size:11px;color:var(--muted);">Entrada principal · 3 min</div>
+          <span class="chip chip-success" style="margin-top:4px;">🟢 Disponible</span>
+        </div>
+        <div style="text-align:center;">
+          <div class="avail-num" style="color:var(--success);">24</div>
+          <div class="avail-label">cupos</div>
+        </div>
+      </div>
+
+      <button class="btn btn-outline btn-full" style="margin-top:4px;" onclick="showToast('⭐ Parqueadero ML guardado como favorito')">⭐ Guardar ruta favorita</button>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Inicio</button>
+      <button class="nav-item" onclick="goTo('screen-podcast')"><span class="nav-icon">🎧</span>Podcast</button>
+      <button class="nav-item active" onclick="goTo('screen-parking')"><span class="nav-icon">🅿️</span>Parqueo<div class="nav-dot"></div></button>
+      <button class="nav-item" onclick="goTo('screen-community')"><span class="nav-icon">👥</span>Comunidad</button>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════
+       COMUNIDAD
+  ══════════════════════════════ -->
+  <div class="screen" id="screen-community">
+    <div class="header">
+      <div style="font-size:20px;font-weight:800;">👥 Ir Juntos</div>
+      <div style="font-size:12px;opacity:.75;margin-top:2px;">Encuentra compañeros para tu trayecto</div>
+    </div>
+    <div class="content">
+
+      <!-- Recomendación personalizada -->
+      <div class="card" style="margin-bottom:12px;background:#e8f4ff;border-left:4px solid var(--navy);">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);">💡 Recomendado para ti</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;">Usas TransMilenio · 3 compañeros salen desde Calle 100 entre 6:30 y 7:00 AM</div>
+      </div>
+
+      <!-- Modo trayecto tranquilo -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:13px;font-weight:700;">🌿 Trayecto tranquilo</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">Rutas menos estresantes aunque tarden un poco más</div>
+          </div>
+          <div class="toggle toggle-off" onclick="toggleSwitch(this)" id="toggle-tranquilo">
+            <div class="toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <span style="font-size:17px;">🔍</span>
+        <input class="search-input" placeholder="Buscar por barrio o ruta...">
+      </div>
+
+      <div class="section-title">Medio de transporte</div>
+      <div class="transport-tags">
+        <div class="transport-tag sel" onclick="toggleTag(this)">🚌 TransMi</div>
+        <div class="transport-tag" onclick="toggleTag(this)">🚶 A pie</div>
+        <div class="transport-tag" onclick="toggleTag(this)">🛴 Scooter</div>
+        <div class="transport-tag" onclick="toggleTag(this)">🚲 Bici</div>
+      </div>
+
+      <!-- Rutas favoritas -->
+      <div class="section-title">Rutas favoritas ⭐</div>
+      <div class="fave-item">
+        <span style="font-size:20px;">🚌</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Calle 100 → Universidades</div>
+          <div style="font-size:11px;color:var(--muted);">TransMilenio · 55 min · Usada 18 veces</div>
+        </div>
+        <span class="chip chip-success">Favorita</span>
+      </div>
+
+      <div class="section-title">Saliendo pronto</div>
+
+      <div class="comm-card">
+        <div class="avatar" style="background:#e8ebff;">👩‍🎓</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Ana M. · Chapinero</div>
+          <div style="font-size:11px;color:var(--muted);">🚌 TransMi · 6:30 AM · 📍 Est. ML-202</div>
+          <div style="margin-top:3px;display:flex;gap:4px;align-items:center;">
+            <span class="chip chip-navy">Matemáticas</span>
+            <span class="chip chip-success" onclick="showToast('📍 Ubicación de Ana compartida')" style="cursor:pointer;">📍 En vivo</span>
+          </div>
+        </div>
+        <button class="join-btn joined" onclick="toggleJoin(this)">✓ Unido</button>
+      </div>
+
+      <div class="comm-card">
+        <div class="avatar" style="background:#e8f5e9;">👨‍🎓</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Carlos R. · Usaquén</div>
+          <div style="font-size:11px;color:var(--muted);">🚌 TransMi · 6:45 AM · Est. Héroes</div>
+          <div style="margin-top:3px;"><span class="chip chip-teal">Economía</span></div>
+        </div>
+        <button class="join-btn open" onclick="toggleJoin(this)">Unirse</button>
+      </div>
+
+      <div class="comm-card">
+        <div class="avatar" style="background:#fff3e0;">👩‍🎓</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">Valeria O. · Suba</div>
+          <div style="font-size:11px;color:var(--muted);">🛴 Scooter · 7:00 AM · Cra. 11</div>
+          <div style="margin-top:3px;"><span class="chip chip-purple">Ingeniería</span></div>
+        </div>
+        <button class="join-btn open" onclick="toggleJoin(this)">Unirse</button>
+      </div>
+
+      <div class="comm-card">
+        <div class="avatar" style="background:#ffe8e8;">👨‍🎓</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;">David L. · Teusaquillo</div>
+          <div style="font-size:11px;color:var(--muted);">🚲 Bici · 🌿 Trayecto tranquilo · 7:15 AM</div>
+          <div style="margin-top:3px;"><span class="chip chip-success">Trayecto suave</span></div>
+        </div>
+        <button class="join-btn open" onclick="toggleJoin(this)">Unirse</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-navy btn-full" onclick="openModal('modal-salida')">📍 Publicar mi salida</button>
+        <button class="btn btn-full" style="background:#e8f5e9;color:var(--success);border:none;font-size:13px;font-weight:700;" onclick="showToast('📡 Compartiendo ubicación en tiempo real')">📡 Ubicación</button>
+      </div>
+    </div>
+    <nav class="bottom-nav">
+      <button class="nav-item" onclick="goTo('screen-home')"><span class="nav-icon">🏠</span>Inicio</button>
+      <button class="nav-item" onclick="goTo('screen-podcast')"><span class="nav-icon">🎧</span>Podcast</button>
+      <button class="nav-item" onclick="goTo('screen-parking')"><span class="nav-icon">🅿️</span>Parqueo</button>
+      <button class="nav-item active" onclick="goTo('screen-community')"><span class="nav-icon">👥</span>Comunidad<div class="nav-dot"></div></button>
+    </nav>
+  </div>
+
+  <!-- ══════════════════════════════
+       PERFIL
+  ══════════════════════════════ -->
+  <div class="screen" id="screen-profile">
+    <div class="profile-header">
+      <button class="btn-back" onclick="goTo('screen-home')" style="margin-bottom:14px;">← Volver</button>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div class="profile-avatar">🧑‍🎓</div>
+        <div>
+          <div style="font-size:17px;font-weight:800;">Samuel Santana</div>
+          <div style="font-size:12px;opacity:.7;">s.santanam@uniandes.edu.co</div>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <span class="chip" style="background:rgba(255,255,255,.2);color:white;font-size:10px;">Matemáticas</span>
+            <span class="chip" style="background:rgba(255,255,255,.2);color:white;font-size:10px;">Economía</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- LOGROS -->
+      <div class="section-title">🏆 Logros</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:700;">Tu progreso</span>
+          <span style="font-size:12px;color:var(--purple);font-weight:700;">Nivel 3 · Estudiante Fluido</span>
+        </div>
+        <div style="height:8px;background:var(--border);border-radius:8px;margin-bottom:14px;">
+          <div style="width:65%;height:100%;background:linear-gradient(90deg,var(--teal),var(--purple));border-radius:8px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+          <div class="badge">
+            <div class="badge-icon" style="background:#fff3e0;">🎧</div>
+            <div class="badge-label">Oyente Pro</div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon" style="background:#e8f5e9;">🚌</div>
+            <div class="badge-label">Commuter 10x</div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon" style="background:#ede8ff;">🧠</div>
+            <div class="badge-label">Quiz Master</div>
+          </div>
+          <div class="badge badge-locked">
+            <div class="badge-icon" style="background:#f0f0f0;">🏅</div>
+            <div class="badge-label">Cerebro Const.</div>
+          </div>
+          <div class="badge badge-locked">
+            <div class="badge-icon" style="background:#f0f0f0;">👥</div>
+            <div class="badge-label">Conector</div>
+          </div>
+          <div class="badge badge-locked">
+            <div class="badge-icon" style="background:#f0f0f0;">⭐</div>
+            <div class="badge-label">Estrella FloU</div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon" style="background:#e8ebff;">🌿</div>
+            <div class="badge-label">Viaje Tranquilo</div>
+          </div>
+          <div class="badge badge-locked">
+            <div class="badge-icon" style="background:#f0f0f0;">🔥</div>
+            <div class="badge-label">Racha 30d</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATERIAS -->
+      <div class="section-title">Mis materias</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:17px;">📐</span>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Álgebra Lineal</div><div style="font-size:11px;color:var(--muted);">L-M-J 8:00 AM</div></div>
+            <span class="chip chip-navy">Activa</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:17px;">⚡</span>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Física II</div><div style="font-size:11px;color:var(--muted);">M-J 2:00 PM · ⚠️ Parcial viernes</div></div>
+            <span class="chip chip-red">Parcial</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:17px;">📊</span>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Microeconomía</div><div style="font-size:11px;color:var(--muted);">L-M-J 10:00 AM</div></div>
+            <span class="chip chip-navy">Activa</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:17px;">📚</span>
+            <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Historia Pensamiento Ec.</div><div style="font-size:11px;color:var(--muted);">M-J 4:00 PM</div></div>
+            <span class="chip chip-navy">Activa</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PREFERENCIAS -->
+      <div class="section-title">Preferencias</div>
+      <div class="card" style="margin-bottom:14px;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:600;">Alertas de tráfico</span>
+            <div class="toggle toggle-on" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:600;">Mensajes motivacionales</span>
+            <div class="toggle toggle-on" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:600;">Check-in emocional diario</span>
+            <div class="toggle toggle-on" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:600;">Compartir ubicación</span>
+            <div class="toggle toggle-off" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:13px;font-weight:600;">Modo oscuro</span>
+            <div class="toggle toggle-off" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-outline btn-full" onclick="goTo('screen-login')" style="color:var(--red);border-color:var(--red);">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       MODAL: CHECK-IN EMOCIONAL
+  ══════════════════════════════ -->
+  <div class="modal-overlay" id="modal-checkin" onclick="closeModalOutside(event,'modal-checkin')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="font-size:17px;font-weight:800;">¿Cómo te sientes hoy?</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:12px;">FloU personalizará tu día según tu estado</div>
+      <div class="emotion-row">
+        <div class="emotion-btn" onclick="selectEmotion(this,'genial')"><span class="emotion-emoji">😄</span><span class="emotion-label">Genial</span></div>
+        <div class="emotion-btn sel" onclick="selectEmotion(this,'bien')"><span class="emotion-emoji">🙂</span><span class="emotion-label">Bien</span></div>
+        <div class="emotion-btn" onclick="selectEmotion(this,'regular')"><span class="emotion-emoji">😐</span><span class="emotion-label">Regular</span></div>
+        <div class="emotion-btn" onclick="selectEmotion(this,'cansado')"><span class="emotion-emoji">😴</span><span class="emotion-label">Cansado</span></div>
+        <div class="emotion-btn" onclick="selectEmotion(this,'estresado')"><span class="emotion-emoji">😤</span><span class="emotion-label">Estresado</span></div>
+      </div>
+
+      <div id="emotion-suggestion" class="card" style="background:#f0f4ff;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);">💡 FloU sugiere para ti:</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Podcast de 10 min en el trayecto + pausa de 15 min al medio día</div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Actividades rápidas recomendadas:</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <div onclick="showToast('🫁 Iniciando ejercicio de respiración')" class="chip chip-teal" style="cursor:pointer;padding:8px 12px;font-size:12px;">🫁 Respirar</div>
+        <div onclick="showToast('🎵 Abriendo lista de música relajante')" class="chip chip-purple" style="cursor:pointer;padding:8px 12px;font-size:12px;">🎵 Música</div>
+        <div onclick="showToast('⏸ Mini pausa de 5 min programada')" class="chip chip-warn" style="cursor:pointer;padding:8px 12px;font-size:12px;">⏸ Mini pausa</div>
+        <div onclick="goTo('screen-podcast');closeModal('modal-checkin')" class="chip chip-navy" style="cursor:pointer;padding:8px 12px;font-size:12px;">🎧 Podcast</div>
+      </div>
+
+      <button class="btn btn-navy btn-full" onclick="closeModal('modal-checkin');showToast('✅ Check-in guardado — FloU ajustó tu día')">Guardar estado</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       MODAL: MODO CONCENTRACIÓN
+  ══════════════════════════════ -->
+  <div class="modal-overlay" id="modal-concentrate" onclick="closeModalOutside(event,'modal-concentrate')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="font-size:17px;font-weight:800;">🎧 Modo Concentración</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:16px;">Actívalo para tu trayecto de 55 min</div>
+
+      <div class="card" style="margin-bottom:12px;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:13px;font-weight:700;">🔕 Silenciar notificaciones</div><div style="font-size:11px;color:var(--muted);">Solo alertas urgentes</div></div>
+            <div class="toggle toggle-on" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:13px;font-weight:700;">🌊 Sonidos relajantes</div><div style="font-size:11px;color:var(--muted);">Lluvia, naturaleza, café</div></div>
+            <div class="toggle toggle-on" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:13px;font-weight:700;">📚 Reproducir podcast</div><div style="font-size:11px;color:var(--muted);">Física II – Ondas (10 min)</div></div>
+            <div class="toggle toggle-on" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">Sonido de fondo</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <div onclick="toggleTag(this);showToast('🌧 Lluvia activada')" class="transport-tag sel">🌧 Lluvia</div>
+        <div onclick="toggleTag(this);showToast('🌿 Naturaleza activada')" class="transport-tag">🌿 Naturaleza</div>
+        <div onclick="toggleTag(this);showToast('☕ Café activado')" class="transport-tag">☕ Café</div>
+        <div onclick="toggleTag(this);showToast('🎵 Lo-fi activado')" class="transport-tag">🎵 Lo-fi</div>
+      </div>
+
+      <button class="btn btn-navy btn-full" onclick="closeModal('modal-concentrate');showToast('🎧 Modo concentración activado — ¡Buen trayecto!')">Activar modo concentración</button>
+      <button onclick="closeModal('modal-concentrate')" style="width:100%;margin-top:10px;padding:11px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       MODAL: AGREGAR TAREA
+  ══════════════════════════════ -->
+  <div class="modal-overlay" id="modal-tarea" onclick="closeModalOutside(event,'modal-tarea')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:3px;">Nueva tarea</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">FloU la programa en tu agenda inteligentemente</div>
+
+      <div class="input-group">
+        <div class="input-label">Nombre</div>
+        <input class="input-field" placeholder="Ej: Taller de Álgebra">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Materia</div>
+        <select class="input-field" style="appearance:none;">
+          <option>Álgebra Lineal</option><option>Microeconomía</option><option>Física II</option><option>Historia Pensamiento Ec.</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <div class="input-label">Prioridad</div>
+        <div class="priority-row">
+          <button class="priority-btn sel-alta" onclick="selectPriority(this,'alta')">🔴 Alta</button>
+          <button class="priority-btn" onclick="selectPriority(this,'media')">🟡 Media</button>
+          <button class="priority-btn" onclick="selectPriority(this,'baja')">🟢 Baja</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">Fecha límite</div>
+        <input class="input-field" type="date" value="2026-05-15">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Duración estimada (min)</div>
+        <input class="input-field" type="number" value="60">
+      </div>
+
+      <div style="background:#f0f4ff;border-radius:12px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:3px;">🤖 FloU sugiere:</div>
+        <div style="font-size:12px;color:var(--muted);">Programar hoy 9:50–10:50 AM (espacio libre entre clases). Parcial de Física el viernes — ¡ponla como alta!</div>
+      </div>
+
+      <button class="btn btn-navy btn-full" onclick="closeModal('modal-tarea');showToast('✅ Tarea agregada a tu agenda')">✅ Programar en mi agenda</button>
+      <button onclick="closeModal('modal-tarea')" style="width:100%;margin-top:9px;padding:11px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       MODAL: PUBLICAR SALIDA
+  ══════════════════════════════ -->
+  <div class="modal-overlay" id="modal-salida" onclick="closeModalOutside(event,'modal-salida')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:3px;">Publicar mi salida</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px;">Otros estudiantes podrán unirse a tu trayecto</div>
+      <div class="input-group">
+        <div class="input-label">¿Desde dónde sales?</div>
+        <input class="input-field" placeholder="Ej: Calle 100 con Autopista Norte">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Hora de salida</div>
+        <input class="input-field" type="time" value="06:30">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Medio de transporte</div>
+        <div class="transport-tags">
+          <div class="transport-tag sel" onclick="toggleTag(this)">🚌 TransMi</div>
+          <div class="transport-tag" onclick="toggleTag(this)">🚶 A pie</div>
+          <div class="transport-tag" onclick="toggleTag(this)">🛴 Scooter</div>
+          <div class="transport-tag" onclick="toggleTag(this)">🚲 Bici</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div><div style="font-size:13px;font-weight:700;">📡 Compartir ubicación en tiempo real</div><div style="font-size:11px;color:var(--muted);">Tus compañeros de ruta te verán</div></div>
+        <div class="toggle toggle-on" onclick="toggleSwitch(this)"><div class="toggle-knob"></div></div>
+      </div>
+      <button class="btn btn-navy btn-full" onclick="closeModal('modal-salida');showToast('📍 Salida publicada — ¡Compañeros notificados!')">📍 Publicar salida</button>
+      <button onclick="closeModal('modal-salida')" style="width:100%;margin-top:9px;padding:11px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;">Cancelar</button>
+    </div>
+  </div>
+
+</div><!-- end .phone -->
+
+<!-- TOAST -->
+<div id="toast" style="position:fixed;bottom:calc(50vh - 422px + 90px);left:50%;transform:translateX(-50%);background:#1a1a2e;color:white;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;white-space:nowrap;max-width:340px;text-align:center;"></div>
+
+<script>
+// NAV
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById(id).scrollTop=0;
+}
+
+// MODALS
+function openModal(id){document.getElementById(id).classList.add('active');}
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+function closeModalOutside(e,id){if(e.target.classList.contains('modal-overlay'))closeModal(id);}
+
+// TOAST
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.style.opacity='0',2500);
+}
+
+// PLAY
+let playing=false,speed=1,speedOpts=[1,1.5,2,0.75];
+function togglePlay(){
+  playing=!playing;
+  document.getElementById('playBtn').textContent=playing?'⏸':'▶';
+  if(playing)showToast('▶ Reproduciendo Física II – Ondas');
+}
+function cycleSpeed(){
+  speedOpts.push(speedOpts.shift());
+  speed=speedOpts[0];
+  document.getElementById('speedBtn').textContent=speed+'x';
+  showToast('Velocidad: '+speed+'x');
+}
+function seekAudio(e,bar){
+  const r=bar.getBoundingClientRect();
+  const pct=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  document.getElementById('prog-fill').style.width=(pct*100)+'%';
+  const total=600, cur=Math.round(pct*total);
+  document.getElementById('cur-time').textContent=Math.floor(cur/60)+':'+(cur%60).toString().padStart(2,'0');
+}
+
+// TABS
+function switchTab(name){
+  ['escuchar','crear','quiz','cards'].forEach(t=>{
+    document.getElementById('panel-'+t).style.display=t===name?'':'none';
+    document.getElementById('tab-'+t).className='tab'+(t===name?' active':'');
+  });
+}
+
+// DURATION
+function selectDur(el){
+  el.closest('.dur-row').querySelectorAll('.dur-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  showToast('⏱ Duración: '+el.textContent);
+}
+
+// PRIORITY
+function selectPriority(el,level){
+  el.parentElement.querySelectorAll('.priority-btn').forEach(b=>b.className='priority-btn');
+  el.classList.add('sel-'+level);
+}
+
+// TOGGLE SWITCH
+function toggleSwitch(el){
+  el.classList.toggle('toggle-on');
+  el.classList.toggle('toggle-off');
+}
+
+// TRANSPORT TAG
+function toggleTag(el){el.classList.toggle('sel');}
+function toggleFmt(el){el.classList.toggle('sel');}
+
+// COMMUNITY JOIN
+function toggleJoin(btn){
+  if(btn.classList.contains('joined')){btn.classList.replace('joined','open');btn.textContent='Unirse';}
+  else{btn.classList.replace('open','joined');btn.textContent='✓ Unido';showToast('✅ Te uniste al trayecto');}
+}
+
+// EMOTION
+const emotionMap={
+  genial:'Podcast corto (5 min) y música energética 🎵',
+  bien:'Podcast de 10 min + pausa a mediodía 😊',
+  regular:'Trayecto tranquilo + mini pausa activa 🌿',
+  cansado:'Siesta de 20 min + podcast suave 😴',
+  estresado:'Respiración guiada + modo concentración 🫁'
+};
+function selectEmotion(el,mood){
+  document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('emotion-suggestion').innerHTML=
+    '<div style="font-size:12px;font-weight:700;color:var(--navy);">💡 FloU sugiere para ti:</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:4px;">'+emotionMap[mood]+'</div>';
+}
+
+// RATING
+function ratePodcast(n){
+  document.querySelectorAll('#stars .star').forEach((s,i)=>{s.classList.toggle('lit',i<n);});
+  showToast('⭐ Gracias por tu calificación');
+}
+
+// QUIZ
+function answerQuiz(btn,correct){
+  document.querySelectorAll('.quiz-option').forEach(b=>{b.disabled=true;b.style.opacity='.6';});
+  btn.style.opacity='1';
+  if(correct){btn.classList.add('correct');showToast('✅ ¡Correcto! +10 puntos 🏆');}
+  else{btn.classList.add('wrong');showToast('❌ Incorrecto — revisa tus apuntes');}
+}
+
+// FLASHCARD FLIP
+const cardAnswers={};
+function flipCard(el,q,a){
+  const txt=el.querySelector('.flashcard-text');
+  const label=el.querySelector('.flashcard-label');
+  if(txt.textContent===q){txt.textContent=a;label.textContent='Toca para la pregunta';}
+  else{txt.textContent=q;label.textContent='Toca para revelar';}
+}
+
+// UPLOAD
+function simulateUpload(){
+  showToast('📄 Subiendo apuntes...');
+  setTimeout(()=>showToast('🎧 ¡Podcast generado y listo!'),2500);
+}
+</script>
+</body>
+</html>
